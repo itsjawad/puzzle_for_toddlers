@@ -1,0 +1,287 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Basic puzzle app - jawad.pk</title>
+  
+        
+		
+		<meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimum-scale=1, width=device-width, height=device-height">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+  
+<body>
+<style>* {padding: 0; margin: 0}</style>
+ 
+<script src="js/pixi.min.js"></script>
+<script src="js/scaleToWindow.js"></script>
+  <script type="text/javascript">
+  
+  window.addEventListener("resize", function(event){ 
+  scaleToWindow(app.view);
+});
+  
+  // set to either landscape
+	screen.orientation.lock('landscape');
+	// allow user rotate
+	//screen.orientation.unlock();
+	
+	
+var getViewportDimensions;
+(function() {
+  var dimensions = {};
+  var iOS;
+  getViewportDimensions = function() {
+    // window.innerWidth was unreliable on iOS,
+    // thus:
+    iOS =
+      /iPad|iPhone|iPod/.test(navigator.platform);
+    if (iOS) {
+      if (window.orientation % 180 === 0) {
+        // If portrait mode:
+        dimensions.width = screen.width;
+        dimensions.height = window.innerHeight;
+      } else {
+        // If landscape mode:
+        dimensions.width = screen.height;
+        dimensions.height = window.innerHeight;
+      }
+    } else {
+      dimensions.width = window.innerWidth;
+      dimensions.height = window.innerHeight;
+    }
+    return dimensions;
+  };
+})();
+
+	
+	
+  
+  const NumberUtils = {
+
+  map( num, min1, max1, min2, max2 ) {
+
+    let num1 = ( num - min1 ) / ( max1 - min1 )
+    let num2 = ( num1 * ( max2 - min2 ) ) + min2
+
+    return num2;
+
+  },
+
+  randomRange(min, max) {
+    return min + Math.random() * (max - min);
+  },
+
+  randomRangeInt(min, max) {
+    return Math.floor(min + Math.random() * (max - min));
+  }
+
+};
+  /*
+    let type = "WebGL"
+    if(!PIXI.utils.isWebGLSupported()){
+      type = "canvas"
+    }
+*/
+
+
+var width_ = getViewportDimensions().width;
+var height_ = getViewportDimensions().height;
+if(width_ > 810)
+{
+	width_ = 810;
+}
+
+if(height_ > 431)
+{
+	height_ = 431;
+}
+
+//Create a Pixi Application
+let app = new PIXI.Application({ 	
+    width: width_, 
+    height:  height_,   
+	backgroundColor: 0xa9d7f1,	
+    antialias: true, 
+    transparent: false, 
+    resolution: 1
+  }
+);
+
+
+// Use the native window resolution as the default resolution
+// will support high-density displays when rendering
+PIXI.settings.RESOLUTION = window.devicePixelRatio;
+
+
+//Add the canvas that Pixi automatically created for you to the HTML document
+document.body.appendChild(app.view);
+
+
+
+var t_airplane = PIXI.Texture.from('img/airplane.png');
+var t_airplane_b = PIXI.Texture.from('img/airplane_black.png');
+
+var t_bus = PIXI.Texture.from('img/bus.png');
+var t_bus_b = PIXI.Texture.from('img/bus_black.png');
+
+var t_car = PIXI.Texture.from('img/car.png');
+var t_car_b = PIXI.Texture.from('img/car_black.png');
+
+var t_truck = PIXI.Texture.from('img/truck.png');
+var t_truck_b = PIXI.Texture.from('img/truck_black.png');
+
+var placeholder_array = new Array();
+
+
+var placeholder_spots = new Array (80, 280, 480, 680);
+
+placeholder_spots = shuffle(placeholder_spots);
+
+
+
+
+
+createimgPlaceholder(80, 50, t_airplane_b, "airplane");
+createimgPlaceholder(280, 50, t_bus_b, "bus");
+createimgPlaceholder(480, 50, t_car_b, "car");
+createimgPlaceholder(680, 50, t_truck_b, "truck");
+
+createimg(placeholder_spots[0], 300, t_airplane, "airplane");
+createimg(placeholder_spots[1], 300, t_bus, "bus");
+createimg(placeholder_spots[2], 300, t_car, "car");
+createimg(placeholder_spots[3], 300, t_truck, "truck");
+	
+
+function createimgPlaceholder(x, y, texture, name)
+{
+    // create our little img friend..
+    var img = new PIXI.Sprite(texture);
+	img.name = name;
+    img.position.x = x;
+    img.position.y = y;
+	 img.anchor.set(0.5);
+	img.scale.set(0.7);
+    app.stage.addChild(img);
+	
+	placeholder_array.push(img);
+}
+
+function createimg(x, y, texture, name)
+{
+    // create our little img friend..
+    var img = new PIXI.Sprite(texture);
+	img.name = name;
+    img.interactive = true;
+    img.buttonMode = true;
+    img.anchor.set(0.5);
+    img.scale.set(0.7);
+    img
+        // events for drag start
+        .on('mousedown', onDragStart)
+        .on('touchstart', onDragStart)
+        // events for drag end
+        .on('mouseup', onDragEnd)
+        .on('mouseupoutside', onDragEnd)
+        .on('touchend', onDragEnd)
+        .on('touchendoutside', onDragEnd)
+        // events for drag move
+        .on('mousemove', onDragMove)
+        .on('touchmove', onDragMove);
+
+    img.position.x = x;
+    img.position.y = y;
+
+    app.stage.addChild(img);
+}
+function onDragStart(event)
+{
+    this.data = event.data;
+    this.alpha = 0.5;
+    this.dragging = true;
+	
+}
+
+function onDragEnd()
+{
+    this.alpha = 1;
+    this.dragging = false;
+    this.data = null;
+}
+
+function onDragMove()
+{
+    if (this.dragging)
+    {
+        var newPosition = this.data.getLocalPosition(this.parent);
+        this.position.x = newPosition.x;
+        this.position.y = newPosition.y;
+    }
+	for(var i=0; i<placeholder_array.length; i++)
+	{
+			if(hitTestRectangleCustom(this, placeholder_array[i]))
+			{
+				//console.log("hit on "+placeholder_array[i].name);
+				if(this.name == placeholder_array[i].name)
+				{
+					console.log("correct");
+					this.x = placeholder_array[i].x;
+					this.y = placeholder_array[i].y;
+					
+					    this.dragging = false;
+						this.data = null;
+						this.interactive = false;
+						this.buttonMode = false;
+						this.alpha = 1;
+				}
+				else
+				{
+					this.y +=100;
+				}
+			}
+	}
+	
+}
+
+
+
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+
+function hitTestRectangleCustom(a, b)
+{
+	if(a == null || b == null)
+	{
+		return false;
+	}
+  var ab = a.getBounds();
+  var bb = b.getBounds();
+  return ab.x + (ab.width) > bb.x && ab.x < bb.x + bb.width && ab.y + ab.height > bb.y && ab.y < bb.y + (bb.height/2);
+}
+
+
+function customPush(value, arr, limit) {
+  arr.push(value);
+  while (arr.length > limit) {
+    arr.shift();
+  }
+}
+
+
+
+scaleToWindow(app.view);
+
+  
+</script>
+  
+
+</body>
+</html>
+
+
